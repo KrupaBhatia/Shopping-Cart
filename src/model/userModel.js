@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs')
+
 
 const userSchema = new mongoose.Schema(
     {
@@ -20,11 +20,12 @@ const userSchema = new mongoose.Schema(
     // profileImage: {
     //     type:String,
     //     required:true
-    //    phone: {
-    //         type:String,
-    //         required:true,
-    //         unique:true
-    //     }, // },
+    //     // },
+    phone: {
+            type:String,
+            required:true,
+             unique:true
+            },
     
     password:{
         type:String,
@@ -47,14 +48,5 @@ const userSchema = new mongoose.Schema(
 }, { timestamps: true });
 
 
-userSchema.pre("create",async function(next){
-    if(this.isModified("password")){
-        console.log(`current pass is ${this.password}`)
-        this.password = await bcrypt.hash(this.password,10);
-        console.log(`current pass is ${this.password}`)
-    }
-    next();
-}
-)
 
 module.exports = mongoose.model('users',userSchema)
