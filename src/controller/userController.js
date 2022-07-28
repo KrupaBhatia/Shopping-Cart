@@ -149,3 +149,25 @@ const login = async function (req, res) {
 
 module.exports.login=login;
 
+const objectIdValid = function (value) {
+    return mongoose.Types.ObjectId.isValid(value)
+  }
+const getUserByParam = async function (req, res) {
+    try {
+      let userId = req.params.userId;
+      if (!objectIdValid(userId)) return res.status(400).send({ status: false, message: "user is invalid" });
+      let user = await userModel.findById(userId)
+      if (!user) return res.status(404).send({ status: false, msg: "user does not found!!!" })
+  
+      
+        
+      return res.status(200).send({status: true, message: "User record found",data: user});
+  
+
+    }
+    catch (err) {
+      return res.status(500).send({ status: false, message: err.message })
+    }
+  }
+
+  module.exports.getUserByParam = getUserByParam
