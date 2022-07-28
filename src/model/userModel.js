@@ -17,10 +17,10 @@ const userSchema = new mongoose.Schema(
         unique:true,
         trim:true
     },
-    // profileImage: {
-    //     type:String,
-    //     required:true
-    //     // },
+    profileImage: {
+        type:String,
+        required:true
+        },
     phone: {
             type:String,
             required:true,
