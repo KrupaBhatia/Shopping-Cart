@@ -1,5 +1,5 @@
 const userModel = require('../model/userModel');
-const bcrypt = require ('bcryptjs');
+const bcrypt = require ('bcrypt');
 const jwt = require('jsonwebtoken');
 const validator = require('validator');
 const  aws = require('../aws/aws.js');
@@ -20,7 +20,7 @@ const validEmail=function(value){
     return true
   }
 
-const saltRounds = 10;
+
 const createUser = async function (req, res) {
     try {
         const data = req.body
@@ -52,35 +52,42 @@ const createUser = async function (req, res) {
         if (!valid(password)) return res.status(400).send({ status: false, message: "Please give password" })
         let regexPassword = /^.{8,15}$/
         if (!regexPassword.test(password)) return res.status(400).send({ status: false, message: "In password use minimum 8 and maximum 15 character" })
-        password = await bcrypt.hash(password, saltRounds);
+        
         
         if (Object.keys(data).includes(profileImage)) {
             return res
               .status(400)
               .send({ status: false, message: "ProfileImage is required" });
           }
-        if (!valid(address)) {
-            // if (typeof (address) != "object") return res.status(400).send({ status: false, message: "address should be in object format" })
-            if (!valid(address.shipping)) {
-                if (typeof (address.shipping) != "object") return res.status(400).send({ status: false, message: "shipping should be in object format" })
-                if (!/^[a-zA-Z0-9\/\-\, ]*$/.test(address.shipping["street"])) return res.status(400).send({ status: false, message: "No speacial characters are required" })
-                if (!alphaOnly(address.shipping["city"])) return res.status(400).send({ status: false, message: "In city use only alphabets.." })
-                if (address.shipping["pincode"]) {
-                    let regexPin = /^[0-9]{6}$/
-                    if (!regexPin.test(address.shipping["pincode"])) return res.status(400).send({ status: false, message: "In pincode use only 6 digits.." })
-                }
-            }
-            if (!valid(billing)) {
-                if (typeof (!valid(address.billing)) != "object") return res.status(400).send({ status: false, message: "billing should be in object format" })
-                if (!/^[a-zA-Z0-9\/\-\, ]*$/.test(address.billing["street"])) return res.status(400).send({ status: false, message: "No speacial characters are required" })
-                if (!alphaOnly(address.billing["city"])) return res.status(400).send({ status: false, message: "In city use only alphabets.." })
-                if (address.billing["pincode"]) {
-                    let regexPin = /^[0-9]{6}$/
-                    if (!regexPin.test(address.billing["pincode"])) return res.status(400).send({ status: false, message: "In pincode use only 6 digits.." })
-                }
-            }
-        }
-        let hash = bcrypt.hashSync(password, saltRounds);
+        
+        //----------[Address Validation]
+        if(!address) return res.status(400).send({status: false, message : 'Please enter address'})
+        let Fulladdress = JSON.parse(address)
+        let{shipping, billing} = Fulladdress
+
+        if(!shipping) return res.status(400).send({status : false, message : 'Please enter shipping address'})
+        if (!Fulladdress.shipping.street) return res.status(400).send({ status: false, message: "Please enter shipping street" })
+
+        if (!Fulladdress.shipping.city) return res.status(400).send({ status: false, message: "Please enter shipping city" })
+        if (!alphaOnly(Fulladdress.shipping.city)) return res.status(400).send({ status: false, message: "Enter a valid city name in shipping" })
+
+        if (!Fulladdress.shipping.pincode) return res.status(400).send({ status: false, message: "Please enter shipping pincode" })
+        if (!(/^[1-9]{1}[0-9]{5}$/).test(Fulladdress.shipping.pincode)) return res.status(400).send({ status: false, message: "invalid Pincode in shipping" })
+
+        if(!billing) return res.status(400).send({status : false, message : 'Please enter billing address'})
+        if (!Fulladdress.billing.street) return res.status(400).send({ status: false, message: "Please enter billing street" })
+
+        if (!Fulladdress.billing.city) return res.status(400).send({ status: false, message: "Please enter billing city" })
+        if (!alphaOnly(Fulladdress.billing.city)) return res.status(400).send({ status: false, message: "Enter a valid city name in shipping" })
+        
+        if (!Fulladdress.billing.pincode) return res.status(400).send({ status: false, message: "Please enter billing pincode" })
+        if (!(/^[1-9]{1}[0-9]{5}$/).test(Fulladdress.billing.pincode)) return res.status(400).send({ status: false, message: "invalid Pincode in billing" })
+
+        data.address = Fulladdress
+        const salt = await bcrypt.genSalt(10);
+    const hashedPass = await bcrypt.hash(password, salt);
+    req.body.password = hashedPass;
+        
 
         if (files.length > 0) {
             data.profileImage = await aws.uploadFile(files[0]);
@@ -102,35 +109,34 @@ module.exports.createUser = createUser
 
 
 const login = async function (req, res) {
-
     try {
 
-        const loginDetails = req.body;
+        if (Object.keys(req.body).length == 0)
+        return res.status(400).send({ status: false, message: "please provide data" });
 
-        const { email, password } = loginDetails;
-
-        if (!validator.isValidRequestBody(loginDetails)) {
-            return res.status(400).send({ status: false, message: 'Please provide login details' })
-        }
-
-        if (!validator.isValid(email)) {
-            return res.status(400).send({ status: false, message: 'Email-Id is required' })
-        }
+        let { email, password } = req.body;
+        
+      
+        if(!valid(email))return  res.status(400).send({ status: false,message: "please enter email" })
+        if(!validEmail(email))return  res.status(400).send({ status: false,message: "please enter email in proper format" })
 
 
-        if (!validator.isValid(password)) {
+        if (!valid(password)) {
             return res.status(400).send({ status: false, message: 'Password is required' })
         }
 
         const userData = await userModel.findOne({ email });
-
+        console.log(userData,"148")
         if (!userData) {
             return res.status(401).send({ status: false, message: `Login failed!! Email-Id is incorrect!` });
         }
-
-        const checkPassword = await bcrypt.compare(password, userData.password)
+        hashed=userData.password
+        console.log(password,hashed)
+        let checkPassword = await bcrypt.compare(hashed,password)
+          console.log(checkPassword,"154")
 
         if (!checkPassword) return res.status(401).send({ status: false, message: `Login failed!! password is incorrect.` });
+
         let userId=userData._id
         const token = jwt.sign({
             userId: userId,
@@ -146,8 +152,55 @@ const login = async function (req, res) {
 
     }
 }
+// const loginUser = async function (req, res) {
+//   try {
+//     let { email, password } = req.body;
 
-module.exports.login=login;
+//     if (Object.keys(req.body).length == 0) {
+//       return res.status(400).send({ status: false, messege: "please enter data in request body" });
+//     }
+
+//     if (!email)
+//       return res.status(400).send({ status: false, messege: "please enter email" });
+
+
+//     if (!password)
+//       return res.status(400).send({ status: false, messege: "please enter password " });
+
+
+//     let userData = await userModel.findOne({ email: email });
+//     if (!userData) {
+//       return res.status(404).send({ status: false, messege: "no data found " });
+//     }
+//     console.log(password,userData.password,"194")
+
+//     let checkPassword = await bcrypt.compare(password, userData.password);
+
+//     console.log(checkPassword,"196")
+//     if (!checkPassword)
+//       return res.status(400).send({ status: false, messege: "Login failed!! password is incorrect." });
+//       let userId=userData._id
+
+//         const token = jwt.sign({
+//             userId: userId,
+//             iat: Math.floor(Date.now() / 1000),
+//             exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60
+//         }, 'Project5')
+
+//         return res.status(200).send({ status: true, message: "LogIn Successful!!", data: {userId:userId,Token:token} });
+
+//     } catch (err) {
+
+//         return res.status(500).send({ status: false, error: err.message });
+
+//     }
+// }
+
+    
+
+module.exports.login=loginUser;
+
+
 
 const objectIdValid = function (value) {
     return mongoose.Types.ObjectId.isValid(value)
