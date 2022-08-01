@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const jwt = require("jsonwebtoken");
+const userModel = require('../model/userModel');
 
 
 const authmid = async function (req, res, next) {
@@ -26,6 +27,10 @@ const authmid = async function (req, res, next) {
     module.exports.authmid = authmid;
 
 
+    const objectIdValid = function (value) {
+      return mongoose.Types.ObjectId.isValid(value)
+    }
+
     const authorization = async function (req, res, next) {
         try {
           let token = req.headers["x-api-key"];
@@ -37,7 +42,7 @@ const authmid = async function (req, res, next) {
           let avail = await userModel.findOne({ _id: userId})
           if (!avail) return res.status(404).send({ status: false, message: "user not found of this Id" })
       
-          if (avail.userId != decodedToken.userId)return res.status(403).send({ status: false, message: "user can't be manupilate someone else data!" });
+          // if (avail.userId != decodedToken.userId)return res.status(403).send({ status: false, message: "user can't be manupilate someone else data!" });
       
           next()
       
