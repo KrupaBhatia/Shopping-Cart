@@ -1,7 +1,7 @@
 const userModel = require('../model/userModel');
 const bcrypt = require ('bcrypt');
 const jwt = require('jsonwebtoken');
-const  aws = require('../aws/aws.js');
+const uploadFile = require('../aws/aws')
 const mongoose = require('mongoose');
 
 const alphaOnly = function (value) {
@@ -19,7 +19,27 @@ const validEmail=function(value){
     if (typeof (value) === "string" && value.trim().length == 0) return false
     return true
   }
+  
+  const isValidString = function(value){
+      if(!/^[A-Za-z ]+$/.test(value)) {return false}
+      else return true
+  }
+  
+  
+  const isValidPhone = function(value){
+      if( /^\d{10}$/.test(value)) {return true}
+      else return false
+  }
+  
+  
+  const isValidPassword = function(value){
+      if(/^.{8,15}$/.test(value)==true) {return true}
+      else return false
+  }
 
+  const objectIdValid = function (value) {
+    return mongoose.Types.ObjectId.isValid(value)
+  }
 
 const createUser = async function (req, res) {
     try {
@@ -29,8 +49,6 @@ const createUser = async function (req, res) {
         return res.status(400).send({ status: false, message: "please provide data" });
 
         let {  lname,fname, phone, email, password, address,profileImage } = data
-
-       
 
         if (!valid(lname)) return res.status(400).send({ status: false, message: "Please give name" })
         if (!alphaOnly(lname)) return res.status(400).send({ status: false, message: "In lname use only alphabets.." })
@@ -60,7 +78,6 @@ const createUser = async function (req, res) {
               .send({ status: false, message: "ProfileImage is required" });
           }
         
-        //----------[Address Validation]
         if(!address) return res.status(400).send({status: false, message : 'Please enter address'})
         let Fulladdress = JSON.parse(address)
         let{shipping, billing} = Fulladdress
@@ -85,12 +102,12 @@ const createUser = async function (req, res) {
 
         data.address = Fulladdress
         const salt = await bcrypt.genSalt(10);
-    const hashedPass = await bcrypt.hash(password, salt);
-    req.body.password = hashedPass;
+        const hashedPass = await bcrypt.hash(password, salt);
+        req.body.password = hashedPass;
         
 
         if (files.length > 0) {
-            data.profileImage = await aws.uploadFile(files[0]);
+            data.profileImage = await uploadFile(files[0]);
           } else {
             return res
               .status(400)
@@ -156,22 +173,18 @@ module.exports.login=login;
 
 
 
-const objectIdValid = function (value) {
-  return mongoose.Types.ObjectId.isValid(value)
-}
+
 const getUserByParam = async function (req, res) {
     try {
       let userId = req.params.userId;
+      let validUserId = req.tokenData.userId
       if (!objectIdValid(userId)) return res.status(400).send({ status: false, message: "user is invalid" });
+      if (userId != validUserId) return res.status(400).send({ status: false, message: "please enter existing user" })
       let user = await userModel.findById(userId)
       if (!user) return res.status(404).send({ status: false, msg: "user does not found!!!" })
-  
-      
-        
-      return res.status(200).send({status: true, message: "User record found",data: user});
-  
 
-    }
+      return res.status(200).send({status: true, message: "User record found",data: user});
+      }
     catch (err) {
       return res.status(500).send({ status: false, message: err.message })
     }
@@ -179,109 +192,94 @@ const getUserByParam = async function (req, res) {
 
   module.exports.getUserByParam = getUserByParam
 
-  const dataExist = function (data) {
-    if (Object.keys(data).length != 0) return true
-  }
+ 
 
-
-const updateUser =  async function (req, res) {
+  const updateUser = async function (req, res) {
     try {
-      
-      let userId = req.params.userId;
-      if (!objectIdValid(userId)) return res.status(400).send({ status: false, message: "user is invalid" });
-      let user = await userModel.findById(userId)
-      if (!user) return res.status(404).send({ status: false, msg: "user does not found!!!" })
-     
-      const files = req.files
-      let data = req.body
-      if (!dataExist(data)) return res.status(400).send({ status: false, message: "please provide data that you want to be update.." })
-      
-      
-      let {  lname,fname, phone, email, password, address,profileImage } = data
-
-      if (!valid(lname)) return res.status(400).send({ status: false, message: "Please give lname" })
-        if (!alphaOnly(lname)) return res.status(400).send({ status: false, message: "In lname use only alphabets.." })
-        if (!valid(fname)) return res.status(400).send({ status: false, message: "Please give fname" })
-        if (!alphaOnly(fname)) return res.status(400).send({ status: false, message: "In fname use only alphabets.." })
-
-        if (!valid(phone)) return res.status(400).send({ status: false, message: "Please give phone no." })
-        let regexPhone = /^(?:(?:\+|0{0,2})91(\s*|[\-])?|[0]?)?([6789]\d{2}([ -]?)\d{3}([ -]?)\d{4})$/
-        if (!regexPhone.test(phone)) return res.status(400).send({ status: false, message: "Please give phone no. in proper format" })
-        let existPhone = await userModel.find({ phone: phone })
-        if (existPhone.length != 0) return res.status(400).send({ status: false, message: `${phone} is already exist` })
-
-        if (!valid(email)) return res.status(400).send({ status: false, message: "Please give email" })
-        if (!validEmail(email)) return res.status(400).send({ status: false, message: "Please give email in proper format" })
-        let existEmail = await userModel.find({ email: email })
-        if (existEmail.length != 0) return res.status(200).send({ status: false, message: `${email} is already exist` })
-
-
-        if (!valid(password)) return res.status(400).send({ status: false, message: "Please give password" })
-        let regexPassword = /^.{8,15}$/
-        if (!regexPassword.test(password)) return res.status(400).send({ status: false, message: "In password use minimum 8 and maximum 15 character" })
-        
-        
-        if (Object.keys(data).includes(profileImage)) {
-            return res
-              .status(400)
-              .send({ status: false, message: "ProfileImage is required" });
-          }
-
-
-        if(!address) return res.status(400).send({status: false, message : 'Please enter address'})
-        let Fulladdress = JSON.parse(address)
-        let{shipping, billing} = Fulladdress
-
-        if(!shipping) return res.status(400).send({status : false, message : 'Please enter shipping address'})
-        if (!Fulladdress.shipping.street) return res.status(400).send({ status: false, message: "Please enter shipping street" })
-
-        if (!Fulladdress.shipping.city) return res.status(400).send({ status: false, message: "Please enter shipping city" })
-        if (!alphaOnly(Fulladdress.shipping.city)) return res.status(400).send({ status: false, message: "Enter a valid city name in shipping" })
-
-        if (!Fulladdress.shipping.pincode) return res.status(400).send({ status: false, message: "Please enter shipping pincode" })
-        if (!(/^[1-9]{1}[0-9]{5}$/).test(Fulladdress.shipping.pincode)) return res.status(400).send({ status: false, message: "invalid Pincode in shipping" })
-
-        if(!billing) return res.status(400).send({status : false, message : 'Please enter billing address'})
-        if (!Fulladdress.billing.street) return res.status(400).send({ status: false, message: "Please enter billing street" })
-
-        if (!Fulladdress.billing.city) return res.status(400).send({ status: false, message: "Please enter billing city" })
-        if (!alphaOnly(Fulladdress.billing.city)) return res.status(400).send({ status: false, message: "Enter a valid city name in shipping" })
-        
-        if (!Fulladdress.billing.pincode) return res.status(400).send({ status: false, message: "Please enter billing pincode" })
-        if (!(/^[1-9]{1}[0-9]{5}$/).test(Fulladdress.billing.pincode)) return res.status(400).send({ status: false, message: "invalid Pincode in billing" })
-
-        data.address = Fulladdress
-
-        const salt = await bcrypt.genSalt(10);
-    const hashedPass = await bcrypt.hash(password, salt);
-    req.body.password = hashedPass;
-        
-
-        if (files.length > 0) {
-            data.profileImage = await aws.uploadFile(files[0]);
-          } else {
-            return res
-              .status(400)
-              .send({ status: false, message: "ProfileImage File is required" });
-          }
-
-        let result = await userModel.findOneAndUpdate({ _id: userId }, {
-           fname:fname,
-           lname:lname,
-           email:email,
-           phone:phone,
-           password:password,
-           profileImage:profileImage,
-           address:address
-          }, { new: true })
-      
-          return res.status(200).send({ status: true, message: "Success", data: result })
-        }
-
-    
-    catch (err) {
-      return res.status(500).send({ status: false, message: err.message });
-    }
+        let user = req.params.userId
+        let data = req.body
+        let update= {}
   
+        let { fname, lname, email, phone, password, address } = data
+       
+        let files = req.files 
+        if (!(data && files))
+        return res.status(400).send({ status: false, message: "Please provide user data for updation" })
+       
+        if (files && files.length > 0) {
+            let uploadedFileURL = await uploadFile(files[0])
+            update["profileImage"] = uploadedFileURL
+        }
+      
+        // if (!isValidReqBody(data)) { return res.status(400).send({ status: false, msg: "Please provide user data for updation" }) }     
+       
+        if(fname)
+        if (!isValidString(fname)) return res.status(400).send({ status: false, message: "First name  must be alphabetic characters" })
+        update["fname"]= fname
+        if(lname)
+        if (!isValidString(lname)) return res.status(400).send({ status: false, message: "Invalid last name name : Should contain alphabetic characters only" });
+         update["lname"]=lname
+       if(email)
+        if (!validEmail(email)) { return res.status(400).send({ status: false, message: "Invalid email address" }) };
+         const isEmailUsed = await userModel.findOne({ email: email });
+        if (isEmailUsed) return res.status(400).send({ status: false, message: "email is already used, try different one" });
+        update["email"]=email
+        if(phone)
+        if (!isValidPhone(phone)) return res.status(400).send({ status: false, message: "Invalid phone number : must contain 10 digit and only number." });
+        const isPhoneUsed = await userModel.findOne({ phone: phone });
+        if (isPhoneUsed) return res.status(400).send({ status: false, message: "phone is already used, try different one" });
+        update["phone"]=phone
+        if(password){ //check the password are given or not
+        if (!isValidPassword(password)) return res.status(400).send({ status: false, message: "Invalid password (length : 8-16) : Abcd@123456"});      
+        let encryptedPassword = bcrypt //convert to the password in bc
+        .hash(password, saltRounds)
+        .then((hash) => {
+          console.log(`Hash: ${hash}`);
+          return hash;
+        });
+  
+        update["password"]= await encryptedPassword;
+        }
+  
+        if (address) {
+            add = JSON.parse(address);
+           
+            const { shipping, billing } = add
+            if(shipping){
+                let {street,city,pincode} =shipping
+            if(street){
+                if(!isValidString(street))return res.status(400).send({ status: false, message: "Shipping street   must be alphabetic characters" })
+            update["address.shipping.street"]=street}
+            if(city){
+                if(!isValidString(city))return res.status(400).send({ status: false, message: "Shipping city must be alphabetic characters" })  
+                update["address.shipping.city"]=city
+            }
+            if(pincode){
+                if(!/^[0-9]{6}$/.test(pincode)) return res.status(400).send({ status: false, message: "Shipping pincode must be number min length 6"})
+                update["address.shipping.pincode"]=pincode
+            }}
+            if(billing){
+                let {street,city,pincode} = billing
+                if(street){
+                    if(!isValidString(street))return res.status(400).send({ status: false, message: "Billing street   must be alphabetic characters" })
+                update["address.billing.street"]=street
+                }
+                if(city){
+                    if(!isValidString(city))return res.status(400).send({ status: false, message: "Billing city must be alphabetic characters" })  
+                    update["address.billing.city"]=city
+                }
+                if(pincode){
+                    if(!/^[0-9]{6}$/.test(pincode)) return res.status(400).send({ status: false, message: "Billing pincode must be number min length 6" })
+                    update["address.billing.phone"]=pincode
+                } 
+            }
+        }
+        let updatedData = await userModel.findOneAndUpdate({ _id: user }, {$set:update}, { new: true })
+        return res.status(200).send({ status: true, message: "User profile updated", data: updatedData })
+  
+    }
+    catch (err) {
+        res.status(500).send({ err: err.message })
+    }
   }
   module.exports.updateUser = updateUser
