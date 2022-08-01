@@ -10,5 +10,6 @@ router.post('/login',userController.login)
 router.get('/user/:userId/profile',mid.authmid,userController.getUserByParam)
 router.put('/user/:userId/profile',mid.authmid,mid.authorization,userController.updateUser )
 router.post("/products", productController.createProducts);
+router.get('products',mid.authmid,productController.getProducts)
 
 module.exports = router;
