@@ -26,7 +26,9 @@ const userModel = require('../model/userModel');
 
 //     module.exports.authmid = authmid;
 
-
+const objectIdValid = function (value) {
+    return mongoose.Types.ObjectId.isValid(value)
+  }
    
 
     const valid = function (value) {
@@ -56,24 +58,24 @@ const userModel = require('../model/userModel');
 module.exports.authmid = authmid;
     
 
-// const authorization = async function (req, res, next) {
-//         try {
-//           let token = req.headers["x-api-key"];
+const authorization = async function (req, res, next) {
+        try {
+          let token = req.headers["x-api-key"];
       
-//           let decodedToken = jwt.verify(token, "Project5");
+          let decodedToken = jwt.verify(token, "Project5");
       
-//           let userId = req.params.userId;
-//           if (!objectIdValid(userId)) return res.status(400).send({ status: false, message: "userId is invalid" });
-//           let avail = await userModel.findOne({ _id: userId})
-//           if (!avail) return res.status(404).send({ status: false, message: "user not found of this Id" })
+          let userId = req.params.userId;
+          if (!objectIdValid(userId)) return res.status(400).send({ status: false, message: "userId is invalid" });
+          let avail = await userModel.findOne({ _id: userId})
+          if (!avail) return res.status(404).send({ status: false, message: "user not found of this Id" })
       
-//           // if (avail.userId != decodedToken.userId)return res.status(403).send({ status: false, message: "user can't be manupilate someone else data!" });
+          if (avail.userId != decodedToken.userId)return res.status(403).send({ status: false, message: "user can't be manupilate someone else data!" });
       
-//           next()
+          next()
       
-//         } catch (err) {
-//           return res.status(500).send({ status: false, message: err.message });
-//         }
-//       };
+        } catch (err) {
+          return res.status(500).send({ status: false, message: err.message });
+        }
+      };
       
-//       module.exports.authorization = authorization;
+      module.exports.authorization = authorization;

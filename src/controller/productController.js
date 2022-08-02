@@ -1,7 +1,5 @@
 const productModel = require('../model/productModel');
-// const  uploadFile = require("../aws/aws");
 const  uploadFile = require('../aws/aws.js');
-const validator = require('validator')
 const ObjectId = require('mongoose').Types.ObjectId;
 
 
