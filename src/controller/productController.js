@@ -238,7 +238,7 @@ const getProduct = async function (req, res) {
       let alreadyDeleted = await productModel.findOne({_id:productId, isDeleted:false})
     if (!alreadyDeleted) return res.status(404).send({ status: false, msg: "Data not found" })
   
-      let { title, description, price, currencyId, currencyFormat, style, installments,isFreeShipping } = data
+      let { title, description, price, style, installments,isFreeShipping } = data
   
       if (!isValidReqBody(data)) { return res.status(400).send({ status: false, msg: "Please enter data for update" }) }
       if (title)
