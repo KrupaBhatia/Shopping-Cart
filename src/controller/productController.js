@@ -60,10 +60,14 @@ const createProducts = async (req, res) => {
         //     return res.status(400).send({ status: false, message: "No data provided" });
         // }
 
-        let { title, description, price, currencyId, currencyFormat, isFreeShipping, style, availableSizes, installments } = data
-
+        let { title, description, price, currencyId, currencyFormat, style, availableSizes, installments } = data
+        console.log(title)
+        
+        
         if (!isValidData(title))
             return res.status(400).send({ status: false, message: "title name is required." });
+
+            
 
         let duplicateTitle = await productModel.findOne({ title });
         if (duplicateTitle) {
@@ -123,151 +127,82 @@ const createProducts = async (req, res) => {
 }
 module.exports.createProducts=createProducts
 
-// const getProducts = async (req, res) => {
-//   try {
-//     let query = req.query;
+var nameRegex=/^[a-zA-Z\s]*$/
+var priceRegex=/^[1-9]\d*(\.\d+)?$/
 
-//     if (query) {
-//       let keys = Object.keys(query);
 
-//       let validKeys = [
-//         "priceGreaterThan",
-//         "size",
-//         "priceLessThan",
-//         "priceSort",
-//         "name"
-//       ];
 
-//       let check = true;
-//       keys.map((e) => {
-//         if (!validKeys.includes(e)) return (check = false);
-//       });
+const getProduct = async function (req, res) {
+  try {
+    let queryData=req.query
+    if(Object.keys(queryData).length==0){
+    let filterData= await productModel.find({isDeleted:false})
+    return res.status(200).send({status:true,message:`Found ${filterData.length} Items`,data:filterData})
+    }
+    let objectFilter={isDeleted:false}
+    let size=queryData.size
+    if(size){
+        let checkSizes=["S", "XS","M","X", "L","XXL", "XL"]
+        let arraySize=size.split(",")
+        for(let i=0;i<arraySize.length;i++){
+            if(checkSizes.includes(arraySize[i]))
+            continue;
+            else
+            return res.status(400).send({status:false,message:"Sizes should in this ENUM only S/XS/M/X/L/XXL/XL"})
+        }
+        objectFilter.availableSizes={}
+        objectFilter.availableSizes.$in=arraySize
+    }
+    let name=queryData.name
+    if(name){
+        if(!name)
+        return res.status(400).send({status:false,message:"Name should not be empty"})
+        name=name.trim()
+        if(nameRegex.test(name)==false)
+        return res.status(400).send({status:false,message:"You entered invalid Name"})
+        objectFilter.title={}
+        objectFilter.title.$regex=name
+        objectFilter.title.$options="i"
+    }
+    let priceArray=[]
+    let priceGreaterThan=queryData.priceGreaterThan
+    if(priceGreaterThan){
+        if(!priceGreaterThan)
+        return res.status(400).send({status:false,message:"Name should not be empty"})
+        if(priceRegex.test(priceGreaterThan)==false)
+        return res.status(400).send({status:false,message:"You entered invalid priceGreaterThan"})
+        objectFilter.price={}
+        objectFilter.price.$gt=Number(priceGreaterThan)
+    }
+    let priceLessThan=queryData.priceLessThan
+    if(priceLessThan){
+        if(!priceLessThan)
+        return res.status(400).send({status:false,message:"price should not be empty"})
+    
+        if(priceRegex.test(priceLessThan)==false)
+        return res.status(400).send({status:false,message:"You entered invalid priceLessThan"})
 
-//       if (!check)
-//         return res.status(400).send({
-//           status: false,
-//           message: "Please enter valid query params",
-//         });
-//     }
+        let objectKeys=Object.keys(objectFilter)
+      
+            if(objectKeys.includes("price")){
+                objectFilter.price.$lt=Number(priceLessThan)
+            } 
+            else{
+            objectFilter.price={}
+            objectFilter.price.$lt=Number(priceLessThan)
+            // console.log(typeof (objectFilter.price.$lt))
+           }
+    }
+    let findFilter= await productModel.find(objectFilter)
+    if(findFilter.length==0)
+    return res.status(404).send({status:false,message:"No product Found"})
+    return res.status(200).send({status:true,message:`${findFilter.length} Matched Found`,data:findFilter})
+  } catch (err) {
+      res.status(500).send({ status: false, Message: err.Message })
+  }
 
-//     if(query.name?.length==0)
-//     return res.status(400).send({
-//       status: false,
-//       message: "Please enter a valid title name"
-//     });
-
-//     if(query.priceGreaterThan?.length==0)
-//     return res.status(400).send({
-//       status: false,
-//       message: "Please enter priceGreaterThan value"
-//     });
-
-//     if(query.priceLessThan?.length==0)
-//     return res.status(400).send({
-//       status: false,
-//       message: "Please enter priceLessThan value"
-//     });
-
-//     if(query.size?.length==0)
-//     return res.status(400).send({
-//       status: false,
-//       message: "Please enter size value"
-//     });
-
-//     if(query.priceSort?.length==0)
-//     return res.status(400).send({
-//       status: false,
-//       message: "Please enter priceSort value"
-//     });
-
-//     const product = { isDeleted: false };
-
-//     if (query.size) {
-//       let allowedSizes = ["S", "XS", "M", "X", "L", "XXL", "XL"];
-
-//       if (!isValid(query.size))
-//         return res
-//           .status(400)
-//           .send({ status: false, message: "Please enter a available size" });
-
-//       query.size = query.size.toUpperCase();
-
-//       let check = true;
-//       let sizes = query.size
-//         .trim()
-//         .split(",")
-//         .map((e) => e.trim());
-
-//       sizes.map((e) => {
-//         if (!allowedSizes.includes(e)) return (check = false);
-//       });
-//       if (!check)
-//         return res.status(400).send({
-//           status: false,
-//           message: "Sizes can only be S, XS, M, X, L, XL, XXL",
-//         });
-
-//       product.availableSizes = { $in: sizes };
-//     }
-
-//     if (query.name) {
-
-//       if(!isValid(query.name))
-//       return res.status(400).send({
-//         status: false,
-//         message: "Please enter a valid title name",
-//       });
-
-//       if (!isValidTitle(query.name))
-//         return res.status(400).send({
-//           status: false,
-//           message: "Please enter a valid title name",
-//         });
-//       product.title = query.name;
-//     }
-
-//     if (query.priceGreaterThan) {
-//       if (!/^[0-9]+$/.test(query.priceGreaterThan))
-//         return res.status(400).send({
-//           status: false,
-//           message: "Please enter a valid product price",
-//         });
-//       product.price = { $gt: query.priceGreaterThan };
-//     }
-//     if (query.priceLessThan) {
-//       if (!/^[0-9]+$/.test(query.priceLessThan))
-//         return res.status(400).send({
-//           status: false,
-//           message: "Please enter a valid product price",
-//         });
-//       product.price = { $lt: query.priceLessThan };
-//     }
-//     if (query.priceGreaterThan && query.priceLessThan)
-//       product.price = { $lt: query.priceLessThan, $gt: query.priceGreaterThan };
-
-//     if (query.priceSort) {
-//       if (query.priceSort != "1" && query.priceSort != "-1")
-//         return res.status(400).send({
-//           status: false,
-//           message: "Please enter priceSort value as 1 or -1",
-//         });
-//     }
-
-//     const getProductDetails = await productModel
-//       .find(product)
-//       .sort({ price: query.priceSort });
-
-//     if (getProductDetails.length == 0)
-//       return res
-//         .status(404)
-//         .send({ status: false, message: "No products found" });
-
-//     res.status(200).send({ status: true, message: getProductDetails });
-//   } catch (err) {
-//     return res.status(500).send({ status: false, message: err.message });
-//   }
-// };
-//   module.exports.getProducts=getProducts
+}
+  module.exports.getProduct=getProduct
 
 
   const getProductbyId = async function (req, res) {
@@ -318,11 +253,11 @@ module.exports.createProducts=createProducts
       if (price)
         if (!/^[0-9 .]+$/.test(price)) return res.status(400).send({ status: false, message: "price must be in numeric" })
   
-      if (currencyId)
-        if ((["INR"].indexOf(currencyId) == -1)) return res.status(400).send({ status: false, message: "currency Id must be INR" })
+      // if (currencyId)
+      //   if ((["INR"].indexOf(currencyId) == -1)) return res.status(400).send({ status: false, message: "currency Id must be INR" })
   
-      if (currencyFormat)
-        if ((["₹"].indexOf(currencyFormat) == -1)) return res.status(400).send({ status: false, message: "currency formet must be ₹ " })
+      // if (currencyFormat)
+      //   if ((["₹"].indexOf(currencyFormat) == -1)) return res.status(400).send({ status: false, message: "currency formet must be ₹ " })
   
       if (style)
         if (!isValidString(style)) return res.status(400).send({ status: false, message: "style must be alphabetic characters" })
