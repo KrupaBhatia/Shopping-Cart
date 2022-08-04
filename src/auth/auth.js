@@ -46,8 +46,7 @@ const Authorization = async function (req, res, next) {
             return res.status(401).send({ status: false, Message: err.message })
         }else{
             req.tokenData = decode;
-            // next()
-            console.log(decode)
+            
         }
         const userId = req.params.userId
         // check the user id present in body

@@ -1,6 +1,6 @@
 const productModel = require('../model/productModel');
 const  uploadFile = require('../aws/aws.js');
-const ObjectId = require('mongoose').Types.ObjectId;
+const mongoose = require('mongoose');
 
 
 
@@ -11,6 +11,7 @@ let isValidData = function (value) {
     if (typeof value === "number" && value.toString().trim().length === 0) return false
     return true;
 }
+
 
 let isValidRequestBody = function (requestBody) {
     return Object.keys(requestBody).length > 0;
@@ -25,29 +26,17 @@ let isValidEnum = (enm) =>{
     return enm.length === uniqueEnums.length && enm.every(e => enumList.includes(e));
 }
 
-
-const isValidReqBody = function(value){
-    if(Object.keys(value).length == 0) {return false}  
-    else return true;
-  }
-
   const isValidString = function(value){
       if(!/^[A-Za-z ]+$/.test(value)) {return false}
       else return true
   }
   
-  function isValidObjectId(id){
-       
-      if(ObjectId.isValid(id)){
-          if((String)(new ObjectId(id)) === id)
-              return true;       
-          return false;
-      }
-      return false;
-  }
+  const objectIdValid = function (value) {
+    return mongoose.Types.ObjectId.isValid(value)
+}
 
-
-
+var nameRegex=/^[a-zA-Z\s]*$/
+var priceRegex=/^[1-9]\d*(\.\d+)?$/
 
 // ////////////////////////////////////////////////////////////////
 
@@ -56,13 +45,12 @@ const createProducts = async (req, res) => {
 
         let data = req.body;
 
-        // if (!isValidRequestBody(data)) {
-        //     return res.status(400).send({ status: false, message: "No data provided" });
-        // }
-
+      
         let { title, description, price, currencyId, currencyFormat, style, availableSizes, installments } = data
-        console.log(title)
+      
         
+        if (Object.keys(req.body).length == 0)
+        return res.status(400).send({ status: false, message: "please provide data" });
         
         if (!isValidData(title))
             return res.status(400).send({ status: false, message: "title name is required." });
@@ -102,8 +90,6 @@ const createProducts = async (req, res) => {
         }
         // aws=========================
         let files = req.files;
-        console.log(files.length,"82")
-        console.log(req.body,"83")
         if (!isValidRequestBody(files)) {
             return res.status(400).send({ status: false, message: "Upload a image." });
         }
@@ -126,11 +112,6 @@ const createProducts = async (req, res) => {
     }
 }
 module.exports.createProducts=createProducts
-
-var nameRegex=/^[a-zA-Z\s]*$/
-var priceRegex=/^[1-9]\d*(\.\d+)?$/
-
-
 
 const getProduct = async function (req, res) {
   try {
@@ -168,7 +149,7 @@ const getProduct = async function (req, res) {
     let priceGreaterThan=queryData.priceGreaterThan
     if(priceGreaterThan){
         if(!priceGreaterThan)
-        return res.status(400).send({status:false,message:"Name should not be empty"})
+        return res.status(400).send({status:false,message:"Price should not be empty"})
         if(priceRegex.test(priceGreaterThan)==false)
         return res.status(400).send({status:false,message:"You entered invalid priceGreaterThan"})
         objectFilter.price={}
@@ -208,7 +189,7 @@ const getProduct = async function (req, res) {
   const getProductbyId = async function (req, res) {
     try {
         let productId = req.params.productId;
-        if (!isValidObjectId(productId)) return res.status(400).send({ status: false, message: "productId is invalid" });
+        if (!objectIdValid(productId)) return res.status(400).send({ status: false, message: "productId is invalid" });
         let product = await productModel.findById(productId)
         if (!product) return res.status(404).send({ status: false, msg: "product does not found!!!" })
 
@@ -231,7 +212,7 @@ const getProduct = async function (req, res) {
       let productId = req.params.productId;
       let data = req.body;
   
-      if (!isValidObjectId(productId)) {
+      if (!objectIdValid(productId)) {
       return res.status(400).send({ status: false, message: "Invalid productId" })}
   
   
@@ -240,7 +221,9 @@ const getProduct = async function (req, res) {
   
       let { title, description, price, style, installments,isFreeShipping } = data
   
-      if (!isValidReqBody(data)) { return res.status(400).send({ status: false, msg: "Please enter data for update" }) }
+      if (Object.keys(req.body).length == 0)
+        return res.status(400).send({ status: false, message: "please provide data" });
+      
       if (title)
         if (!isValidString(title)) return res.status(400).send({ status: false, message: "title  must be alphabetic characters" })
       let isTitlePresent = await productModel.findOne({ title })
@@ -269,8 +252,7 @@ const getProduct = async function (req, res) {
         }
 
       
-      
-       if (data.availableSizes){
+      if (data.availableSizes){
       
         let sizes = data.availableSizes.split(/[\s,]+/)
           let arr = ["S", "XS", "M", "X", "L", "XXL", "XL"]

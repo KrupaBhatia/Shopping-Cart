@@ -85,4 +85,52 @@ module.exports.createCart = createCart
 
 
 
- 
+
+
+const getCart = async function (req, res) {
+    try {
+      let userId = req.params.userId;
+  
+      let cartDetails = await cartModel
+        .findOne({ userId: userId})
+        .populate("items.productId");
+  
+      if (!cartDetails)
+        return res.status(404).send({ status: false, message: "Cart not found" });
+  
+      return res.status(200).send({status: true,message: "Cart details with Product details",data: cartDetails});
+    } catch (err) {
+      return res.status(500).send({ status: false, message: err.message });
+    }
+  };
+
+  module.exports.getCart = getCart
+
+
+  const deleteCart = async (req, res) => {
+    try {
+      let userId = req.params.userId;
+  
+      let deleteCart = await cartModel.findOneAndUpdate({ userId: userId },
+        { items: [], totalPrice: 0, totalItems: 0 },
+        { new: true });
+      return deleteCart
+        ? res.status(204).send({
+        status: false,
+        message: "Cart Successfully Deleted",
+        data: deleteCart,
+      })
+    : res
+        .status(404)
+        .send({
+          status: false,
+          message: "There is no cart under this user id",
+        });
+    }
+    
+    catch (error) {
+      return res.status(500).send({ status: false, message: error.message });
+    }
+  };
+
+  module.exports.deleteCart = deleteCart
