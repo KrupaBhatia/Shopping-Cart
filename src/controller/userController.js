@@ -4,6 +4,10 @@ const jwt = require('jsonwebtoken');
 const uploadFile = require('../aws/aws')
 const mongoose = require('mongoose');
 
+
+// -------------------------validation-------------------------------------------
+
+
 const alphaOnly = function (value) {
     let regexaAlpha =/^[A-z]*$|^[A-z]+\s[A-z]*$/
     return regexaAlpha.test(value)
@@ -40,6 +44,9 @@ const validEmail=function(value){
   const objectIdValid = function (value) {
     return mongoose.Types.ObjectId.isValid(value)
   }
+
+  // ------------------------------create user------------------------------------------------
+
 
 const createUser = async function (req, res) {
     try {
@@ -123,6 +130,10 @@ const createUser = async function (req, res) {
 module.exports.createUser = createUser
 
 
+
+// ----------------------------------login user-------------------------------------------- 
+
+
 const login = async function (req, res) {
   try {
     let { email, password } = req.body;
@@ -172,7 +183,7 @@ const login = async function (req, res) {
 module.exports.login=login;
 
 
-
+// -----------------------------------------get user by userId----------------------------------------
 
 const getUserByParam = async function (req, res) {
     try {
@@ -193,6 +204,8 @@ const getUserByParam = async function (req, res) {
   module.exports.getUserByParam = getUserByParam
 
  
+  // ------------------------------------update user------------------------------------------
+  
 
   const updateUser = async function (req, res) {
     try {

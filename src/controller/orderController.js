@@ -10,6 +10,7 @@ const objectIdValid = function (value) {
 
 
 
+// ---------------------create order----------------------------------------------------------
 
 const createOrder = async function (req, res) {
     try{
@@ -65,6 +66,8 @@ const createOrder = async function (req, res) {
     }  
 }
     module.exports.createOrder = createOrder;
+
+// -------------------------update order-------------------------------------------------
 
 
     const updateOrder = async function (req, res) {

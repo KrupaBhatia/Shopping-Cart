@@ -7,6 +7,8 @@ const objectIdValid = function (value) {
   return mongoose.Types.ObjectId.isValid(value);
 };
 
+// -----------------------------create cart------------------------------
+
 const createCart = async function (req, res) {
   try {
     const { quantity, productId } = req.body;
@@ -127,6 +129,9 @@ const createCart = async function (req, res) {
 
 module.exports.createCart = createCart;
 
+
+// -----------------------------get cart--------------------------------------
+ 
 const getCart = async function (req, res) {
   try {
     let userId = req.params.userId;
@@ -152,6 +157,10 @@ const getCart = async function (req, res) {
 
 module.exports.getCart = getCart;
 
+
+// ---------------------------delete cart-------------------------------------
+
+
 const deleteCart = async (req, res) => {
   try {
     let userId = req.params.userId;
@@ -176,6 +185,10 @@ const deleteCart = async (req, res) => {
 };
 
 module.exports.deleteCart = deleteCart;
+
+
+// ---------------------------------update cart-------------------------------------
+
 
 const updateCart = async (req, res) => {
   try {
