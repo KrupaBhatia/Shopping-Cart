@@ -71,12 +71,13 @@ const createOrder = async function (req, res) {
         try {
             let userId = req.params.userId
             let data = req.body;
+            let {orderId}  = data;
             if (!objectIdValid(userId)) {
                 return res.status(400).send({ status: false, message: "Invalid userId" })}
                 let alreadyDeleted = await orderModel.findOne({_id:orderId, isDeleted:false})
                 if (!alreadyDeleted) return res.status(404).send({ status: false, msg: "Data not found or already deleted" })
             
-                let {orderId}  = data;
+                
 
             if (Object.keys(req.body).length == 0)
             return res.status(400).send({ status: false, message: "please provide data" });
@@ -85,9 +86,14 @@ const createOrder = async function (req, res) {
             if(userId !== alreadyDeleted.userId.toString())
             return res.status(404).send({ status: false, error: "user Id does not match with orders user Id "});
             
-            if (status == "canceled"){
-                if (!userByOrder.cancellable) { return res.status(400).send({ status: false, Message: "This order can't be cancelled because it is not allowed(cancellable=false)" }) }
-            }
+            if (alreadyDeleted.cancellable==true){
+                
+                let updateStatus = await orderModel.findByIdAndUpdate(orderId, { $set: { status: "cancelled" } }, { new: true });
+
+                return res.status(200).send({ status: true, message: "Order cancelled Successfully", data: updateStatus });}
+                else {
+                    return res.status(400).send({ status: false, message: "Your order isn't cancellable." });
+                  }
         
             
 

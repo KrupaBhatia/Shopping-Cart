@@ -126,7 +126,7 @@ module.exports.deleteCart = deleteCart
 const updateCart = async (req, res) => {
   
   try {
-    let userId1= req.params.userId;
+    let paramsUserId= req.params.userId;
     const data = req.body
   
     if (Object.keys(req.body).length == 0)
@@ -140,7 +140,7 @@ const updateCart = async (req, res) => {
     if (!objectIdValid(cartId)) {
       return res
         .status(400)
-        .send({ status: false, message: "Enter valid User ObjectId in params" });
+        .send({ status: false, message: "Enter valid User CartId in params" });
     }
 
     if (!productId) {
@@ -176,8 +176,8 @@ const updateCart = async (req, res) => {
 
       }
 
-      const productIdInCart = await cartModel.findOne({ userId: userId1, 'items.productId' : productId })
-      console.log(userId1)
+      const productIdInCart = await cartModel.findOne({ userId: paramsUserId, 'items.productId' : productId })
+      console.log(paramsUserId)
       console.log('item')
       console.log(productIdInCart,"180")
       if (!productIdInCart) {
@@ -195,7 +195,7 @@ const updateCart = async (req, res) => {
 
               if (removeProduct == 0 || (items[i].quantity == 1 && removeProduct == 1)) {
 
-                  const removeCart = await cartModel.findOneAndUpdate({ userId: userId },
+                  const removeCart = await cartModel.findOneAndUpdate({ userId: paramsUserId },
                       {
                           $pull: { items: { productId: productId } },
                           $inc: {
@@ -209,7 +209,7 @@ const updateCart = async (req, res) => {
 
               }
 
-              const product = await cartModel.findOneAndUpdate({ "items.productId": productId, userId: userId }, { $inc: { "items.$.quantity": -1, totalPrice: -getPrice } }, { new: true })
+              const product = await cartModel.findOneAndUpdate({ "items.productId": productId, userId: paramsUserId }, { $inc: { "items.$.quantity": -1, totalPrice: -getPrice } }, { new: true })
               return res.status(200).send({ status: true, message: 'sucessfully decrease one quantity of product', data: product })
           }
       }
