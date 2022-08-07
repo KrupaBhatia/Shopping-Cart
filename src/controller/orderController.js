@@ -22,7 +22,7 @@ const createOrder = async function (req, res) {
 
         if(!objectIdValid(cartId)) return res.status(400).send({status: false, message: "Enter valid cart Object Id"})
 
-        let findCart = await cartModel.findOne({_id: cartId,isDeleted:false});
+        let findCart = await cartModel.findOne({ userId});
         
         if(!findCart)
         return res.status(400).send({ status: false, message: "Your cart does not exist" })
@@ -60,7 +60,8 @@ const createOrder = async function (req, res) {
 
     }
     catch(error){
-        res.status(500).send({status: false, message: error.message})                          
+        res.status(500).send({status: false, message: error.message})   
+        console.log(error.message)                       
     }  
 }
     module.exports.createOrder = createOrder;
@@ -84,6 +85,10 @@ const createOrder = async function (req, res) {
             if(userId !== alreadyDeleted.userId.toString())
             return res.status(404).send({ status: false, error: "user Id does not match with orders user Id "});
             
+            if (status == "canceled"){
+                if (!userByOrder.cancellable) { return res.status(400).send({ status: false, Message: "This order can't be cancelled because it is not allowed(cancellable=false)" }) }
+            }
+        
             
 
     } catch (err) {

@@ -171,11 +171,19 @@ const getProduct = async function (req, res) {
             else{
             objectFilter.price={}
             objectFilter.price.$lt=Number(priceLessThan)
-            // console.log(typeof (objectFilter.price.$lt))
            }
     }
-    let findFilter= await productModel.find(objectFilter)
+    let priceSort=queryData.priceSort
+    if (("priceSort")) {
+      if (!(priceSort == 1 || priceSort == -1)) {
+        return res.status(400).send({ status: false, message: `priceSort should be 1 or -1 ` });
+      }
+    }
+
+    let findFilter= await productModel.find(objectFilter).sort({ price: priceSort });
     if(findFilter.length==0)
+      
+
     return res.status(404).send({status:false,message:"No product Found"})
     return res.status(200).send({status:true,message:`${findFilter.length} Matched Found`,data:findFilter})
   } catch (err) {
@@ -221,7 +229,7 @@ const getProduct = async function (req, res) {
   
       let { title, description, price, style, installments,isFreeShipping } = data
   
-      if (Object.keys(req.body).length == 0)
+      if (Object.keys(data).length == 0)
         return res.status(400).send({ status: false, message: "please provide data" });
       
       if (title)

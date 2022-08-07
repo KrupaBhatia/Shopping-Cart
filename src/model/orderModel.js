@@ -17,7 +17,7 @@ const orderSchema = new mongoose.Schema({
         quantity: {
             type: Number,
             required: true,
-            // minLen: 1
+            minLen: 1
         }
     }],
     totalPrice: {

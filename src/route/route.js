@@ -22,8 +22,9 @@ router.delete('/products/:productId',mid.authmid,productController.deleteProduct
 
 
 router.post("/users/:userId/cart",mid.authmid,mid.Authorization,cartController.createCart);
-router.get('/user/:userId/cart',mid.authmid,mid.Authorization,cartController.getCart)
+router.get('/users/:userId/cart',mid.authmid,mid.Authorization,cartController.getCart)
 router.delete('/users/:userId/cart',mid.authmid,mid.Authorization,cartController.deleteCart)
+router.put('/users/:userId/cart',mid.authmid,mid.Authorization,cartController.updateCart)
 
 
 router.post("/users/:userId/orders",mid.authmid,mid.Authorization,orderController.createOrder);
