@@ -172,6 +172,13 @@ else if (priceLessThan) {
 }
 
 let searchProducts;
+console.log(priceSort,"175")
+if(priceSort){
+  // console.log(priceSort,"189")
+    if(!(priceSort== 1||priceSort == -1)){
+      return res.status(400).send({status:false,msg:"priceSort should be 1 or -1 "})
+        
+    }} //else{
 
 if (priceGreaterThan) {
 
@@ -181,7 +188,7 @@ if (priceGreaterThan) {
 }
 
 if (priceLessThan) {
-  searchProducts = await productModel.find(filterquery).sort({ price: Pricesort })
+  searchProducts = await productModel.find(filterquery).sort({ price: priceSort })
   return res.status(200).send({ status: true, msg: "price lower to higher", data: searchProducts })
 }
 
