@@ -4,7 +4,8 @@ const mongoose = require('mongoose');
 
 
 
-// ///////////////////validations\\\\\\\\\\\\\\\\\\\\\
+// ------------------------------validation-------------------------------------------------
+
 let isValidData = function (value) {
     if (typeof value === "undefined" || value === null) return false;
     if (typeof value === "string" && value.trim().length === 0) return false;

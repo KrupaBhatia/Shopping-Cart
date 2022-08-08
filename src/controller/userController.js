@@ -86,7 +86,7 @@ const createUser = async function (req, res) {
           }
         
         if(!address) return res.status(400).send({status: false, message : 'Please enter address'})
-        let Fulladdress = JSON.parse(address)
+        let Fulladdress = JSON.parse(address)  //converting jsdon string into JS object 
         let{shipping, billing} = Fulladdress
 
         if(!shipping) return res.status(400).send({status : false, message : 'Please enter shipping address'})
@@ -108,13 +108,13 @@ const createUser = async function (req, res) {
         if (!(/^[1-9]{1}[0-9]{5}$/).test(Fulladdress.billing.pincode)) return res.status(400).send({ status: false, message: "invalid Pincode in billing" })
 
         data.address = Fulladdress
-        const salt = await bcrypt.genSalt(10);
-        const hashedPass = await bcrypt.hash(password, salt);
-        req.body.password = hashedPass;
+        const salt = await bcrypt.genSalt(10); 
+        const hashedPass = await bcrypt.hash(password, salt); //hashing the password by using salt 
+        req.body.password = hashedPass; //setting hashed pass in data to send it in res
         
 
         if (files.length > 0) {
-            data.profileImage = await uploadFile(files[0]);
+            data.profileImage = await uploadFile(files[0]); //uploading file to aws s3
           } else {
             return res
               .status(400)
@@ -156,7 +156,7 @@ const login = async function (req, res) {
     }
     console.log(password,userData.password,"194")
 
-    let checkPassword = await bcrypt.compare(password, userData.password);
+    let checkPassword = await bcrypt.compare(password, userData.password); //decrypting hashed pass to compare/verify with original one
 
     console.log(checkPassword,"196")
     if (!checkPassword)
@@ -205,7 +205,7 @@ const getUserByParam = async function (req, res) {
 
  
   // ------------------------------------update user------------------------------------------
-  
+
 
   const updateUser = async function (req, res) {
     try {
