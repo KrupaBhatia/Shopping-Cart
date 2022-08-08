@@ -91,9 +91,9 @@ const createOrder = async function (req, res) {
             
             if (alreadyDeleted.cancellable==true){
                 
-                let updateStatus = await orderModel.findByIdAndUpdate(orderId, { $set: { status: "cancelled" } }, { new: true });
+                let updateStatus = await orderModel.findByIdAndUpdate(orderId, { $set: { status: "completed" } }, { new: true });
 
-                return res.status(200).send({ status: true, message: "Order cancelled Successfully", data: updateStatus });}
+                return res.status(200).send({ status: true, message: "updated Successfully", data: updateStatus });}
                 else {
                     return res.status(400).send({ status: false, message: "Your order isn't cancellable." });
                   }

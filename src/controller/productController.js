@@ -120,8 +120,8 @@ module.exports.createProducts=createProducts
 const getProduct = async function (req, res) {
   try {
     let data=req.query
-    let { name, size, priceGreaterThan, priceLessThan } = data;
-
+    let { name, size, priceGreaterThan, priceLessThan,priceSort } = data;
+console.log(priceSort,"124")
     if(Object.keys(data).length==0){
     let filterData= await productModel.find({isDeleted:false})
     return res.status(200).send({status:true,message:`Found ${filterData.length} Items`,data:filterData})
@@ -151,6 +151,8 @@ const getProduct = async function (req, res) {
         filterquery.title.$regex=name
         filterquery.title.$options="i"
     }
+    
+   
    
   if (priceGreaterThan && !isValidData(priceGreaterThan))
   return res.status(400).send({ status: false, message: "provide price" });
@@ -173,17 +175,19 @@ let searchProducts;
 
 if (priceGreaterThan) {
 
-  searchProducts = await productModel.find(filterquery).sort({ price: 1 })
+  searchProducts = await productModel.find(filterquery).sort({ price: priceSort })
   return res.status(200).send({ status: true, msg: "price,higher to lower", data: searchProducts })
 
 }
 
 if (priceLessThan) {
-  searchProducts = await productModel.find(filterquery).sort({ price: -1 })
+  searchProducts = await productModel.find(filterquery).sort({ price: Pricesort })
   return res.status(200).send({ status: true, msg: "price lower to higher", data: searchProducts })
 }
 
-let result = await productModel.find(filterquery)
+
+  console.log(priceSort,"194")
+let result = await productModel.find(filterquery).sort({price:priceSort})
 
 if (result.length === 0) {
   return res.status(404).send({ status: false, msg: "No product found" });
